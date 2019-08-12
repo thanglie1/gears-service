@@ -10,6 +10,10 @@ using namespace maf::messaging;
 class ScanServiceComp : public Component
 {
 public:
+	maf::messaging::Timer _timer;
+	int _percentage = 0;
+	std::shared_ptr<ipc::LocalIPCServiceStub> _serviceStub;
+
 	void start()
 	{
 		this->_detached = false;
@@ -18,11 +22,18 @@ public:
 			if (requestKeeper->getOperationCode() == OpCode::Request && requestKeeper->getOperationID() == CSC_OpID_ScanningStatus)
 			{
 				//_timer.start(1000, [requestKeeper, this] {
-					auto status = ScanningStatusResult::create();
+				auto status = ScanningStatusResult::create();
+				for (int i = 1; i <= 20; i ++){
+					std::this_thread::sleep_for(std::chrono::seconds(1));
+					status->props().set_percentage(i);
+					requestKeeper->update(status);
+				}
+					/*auto status = ScanningStatusResult::create();
 					std::this_thread::sleep_for(std::chrono::seconds(1));
 					status->props().set_percentage(_percentage++);
-					requestKeeper->update(status);
+					requestKeeper->update(status);*/
 					//});
+				requestKeeper->respond(status);
 			}
 			/*else if (requestKeeper->getOperationCode() == OpCode::Abort)
 			{
@@ -34,9 +45,6 @@ public:
 			_serviceStub = ipc::LocalIPCServiceStub::createStub(SERVICE_ID_SCANNING_SERVICE);
 			});
 	}
-	maf::messaging::Timer _timer;
-	int _percentage = 0;
-	std::shared_ptr<ipc::LocalIPCServiceStub> _serviceStub;
 };
 
 int main()
